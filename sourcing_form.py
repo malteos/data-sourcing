@@ -79,6 +79,19 @@ input_license = st.multiselect(
         "do not distribute",
     ],
 )
+input_pii = st.radio(
+    key="pii",
+    label="Does the data source contain personally identifiable or sensitive information that you're aware of?",
+    options=[
+        "I have not checked the data source for personally identifiable or sensitive information.",
+        "Yes",
+        "No",
+    ],
+)
+input_size = st.text_input(
+    key="size",
+    label=f"Size of the data source (in samples, tokens, parameters, or bytes)",
+)
 input_description = st.text_area(
     key="description",
     label=f"Provide a short description of the resource",
@@ -107,17 +120,24 @@ if submitted:
         and st.session_state["data_type"]
         and st.session_state["availibility"]
     ):
-        form_data = json.dumps(dict(st.session_state))
+        
+        form_data = dict(st.session_state)
+        form_data_json = json.dumps(form_data)
         # st.info(form_data)
 
         # Write to file
         if OUTPUT_PATH:
             with open(OUTPUT_PATH, "a") as f:
-                f.write(form_data + "\n")
+                f.write(form_data_json + "\n")
 
         # Send mail
         if EMAIL_FROM and EMAIL_TO and SMTP_HOST and SMTP_PORT:
-            msg = MIMEText(f"Data sourcing:\n\n{form_data}")
+            msg_txt = "Data sourcing form:\n\n"
+            for k, v in form_data.items():
+                msg_txt += f"- {k}: {v}\n"
+            msg_txt += "\n\nJSON:\n\n" + form_data_json
+
+            msg = MIMEText(msg_txt)
 
             # me == the sender's email address
             # you == the recipient's email address
